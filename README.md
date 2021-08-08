@@ -46,23 +46,29 @@ module.exports = {
     }
 }
 安装过程遇到的问题：
-1、安装调试vue3.0的vue-devtools之后没有生效
+1.1、安装调试vue3.0的vue-devtools之后没有生效
 原因：我之前安装过调试vue2.x的vue-devtools，然后我又安装了调试vue3.0的vue-devtools，同时存在两个vue-devtools，结果只有调试vue2.x的vue-devtools生效，后面安装的调试vue3.0的vue-devtools，根本没有生效。我在vue-devtools官网上的常见问题中找到了答案。如下图：
 所以删除了调试vue2.x的vue-devtools就可以了。调试vue3.0的vue-devtools同样可以调试vue2.x。
 
-2、点击下图中的按钮没有反应。
+1.2、点击下图中的按钮没有反应。
 在vscode编辑器中会报这样的错误：
 Could not open App.vue in the editor. 
 To specify an editor, specify the EDITOR env variable or add "editor" field to your Vue project config.
 解决方案：
 打开命令面板 ，输入 ‘>shell command’ ，找到: “Install ‘code’ command in PATH command”。点击即可.
 
-3、但是当我再次打开vscode编辑器的时候，还是需要先安装code命令，再次安装的时候报
+1.3、但是当我再次打开vscode编辑器的时候，还是需要先安装code命令，再次安装的时候报
 没有权限，于是我打开了所有的权限，再次安装的时候还是报这个错误。
 
 解决方案：经过自己的摸索，先进行卸载，然后再进行安装。
 先卸载：
 再进行安装：
 这样就可以了，我不知道其他小伙伴有没有遇到这个问题，我在网上也搜了很多关于权限限制的问题，但是都没有生效，我想是不是我电脑上有一些配置影响了，现在还没找到根本原因，不过不影响运行和调试。
+
+2、调试
+经过安装之后，可以成功的在编辑器中打开对应的组件文件。
+
+先说一下原理：
+通过源码发现，vue-devtools做的事情其实并不复杂，其中利用了nodejs中的child_process执行子进程拿到文件路径，再利用命令（mac和linux使用ps x，Window使用Get-Process）去查找编辑器来打开，当然也可以自己指定编辑器。
 
 ```
