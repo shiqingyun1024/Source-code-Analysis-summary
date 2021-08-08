@@ -26,4 +26,6 @@ vue-devtools打开对应文件的原理以及vscode的调试方式
 4.学习目的
 - 掌握vscode的调试方式
 - 掌握vue-devtools打开组件对应的vue文件的原理
+
+
 ```
