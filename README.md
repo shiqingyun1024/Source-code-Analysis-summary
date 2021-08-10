@@ -223,4 +223,8 @@ function launchEditor (file, specifiedEditor, onErrorCallback) {
   })
 }
 
+wrapErrorCallback函数很精妙
+wrapErrorCallback 返回给一个新的函数，onErrorCallback就成了一个新的函数，wrapErrorCallback 执行时，再去执行 onErrorCallback(cb)。
+
+
 ```
