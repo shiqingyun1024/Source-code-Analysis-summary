@@ -103,4 +103,48 @@ before (app, server) {
         projectDevServerOptions.before && projectDevServerOptions.before(app, server)
   },
 
+4、启动项目后，点击这个按钮
+
+5、Network中发出一个请求
+会看到Network中发送了一个请求http://localhost:8021/_open-in-editor?file=src/components/HelloWorld.vue，并且带有查询参数?file=src/components/HelloWorld.vue?file=src/components/HelloWorld.vue?file=src/components/HelloWorld.vue
+
+6、请求发出之后，调试会走到了这里，请求发出之后，经过第3步的处理，调用了launchEditorMiddleware，所以会走到这里
+先看调试截图。
+
+我们再看一下整个launch-editor-middleware中间件的代码
+// vue3-project/node_modules/launch-editor-middleware/index.js
+const url = require('url')
+const path = require('path')
+const launch = require('launch-editor')
+
+module.exports = (specifiedEditor, srcRoot, onErrorCallback) => {
+  if (typeof specifiedEditor === 'function') {
+    onErrorCallback = specifiedEditor
+    specifiedEditor = undefined
+  }
+
+  if (typeof srcRoot === 'function') {
+    onErrorCallback = srcRoot
+    srcRoot = undefined
+  }
+  // process.cwd() 方法返回 Node.js 进程的当前工作目录。
+  srcRoot = srcRoot || process.cwd()
+  // 打印srcRoot  输出：/Users/shi/Documents/vue-devtools源码分析/open-in-editor/vue3-project
+
+  // 闭包函数
+  return function launchEditorMiddleware (req, res, next) {
+    // 解析出请求路径中所带的参数，这样就得到了文件名
+    const { file } = url.parse(req.url, true).query || {}
+    if (!file) {
+      res.statusCode = 500
+      res.end(`launch-editor-middleware: required query param "file" is missing.`)
+    } else {
+      // path.resolve(srcRoot, file) 
+      // 输出的是/Users/shi/Documents/vue-devtools源码分析/open-in-editor/vue3-project/src/components/HelloWorld.vue
+      launch(path.resolve(srcRoot, file), specifiedEditor, onErrorCallback)
+      res.end()
+    }
+  }
+}
+
 ```
