@@ -147,4 +147,80 @@ module.exports = (specifiedEditor, srcRoot, onErrorCallback) => {
   }
 }
 
+从代码中可以看出最后调用了launch-editor。
+我们分析一下launch-editor-middleware/index.js这个文件
+从上面第3步我们得知launchEditorMiddleware接收的是这样一个箭头函数 ()=>console.log(....)，那就是说传入的specifiedEditor是一个箭头函数，然后specifiedEditor再赋值给onErrorCallback，如果srcRoot是一个函数，也会采取同样的赋值方式（这种切换参数的写法，在很多源码中都很常见。为的是方便用户调用时传参。虽然是多个参数，但可以传一个或者两个）。如果没有传入srcRoot，那么srcRoot就会被赋值 Node.js 进程的当前工作目录。最后返回的是一个闭包函数，在这个函数中，首先先解析出请求路径中所带的参数，这样就得到了文件名。然后进行判断，最后把这个文件完整的文件路径名（/Users/shi/Documents/vue-devtools源码分析/open-in-editor/vue3-project/src/components/HelloWorld.vue）和箭头函数传入launch-editor中。
+7、launch-editor
+通过断点调试进入到launch-editor中，先看一下launch-editor中的代码（只是粘贴了index.js中的launchEditor函数代码）
+
+// vue3-project/node_modules/launch-editor/index.js
+function launchEditor (file, specifiedEditor, onErrorCallback) {
+  // 解析文件路径，行号，列号
+  const parsed = parseFile(file)
+  let { fileName } = parsed
+  const { lineNumber, columnNumber } = parsed
+  // 判断目录中是否存在这个文件
+  if (!fs.existsSync(fileName)) {
+    return
+  }
+
+  if (typeof specifiedEditor === 'function') {
+    onErrorCallback = specifiedEditor
+    specifiedEditor = undefined
+  }
+
+  // onErrorCallback是一个console箭头函数，用wrapErrorCallback包裹了一层，
+  // 所以需要看看wrapErrorCallback这个函数执行了什么
+  onErrorCallback = wrapErrorCallback(onErrorCallback)
+  // 猜测当前正在使用的编辑器
+  const [editor, ...args] = guessEditor(specifiedEditor)
+  if (!editor) {
+    // 如果没有编辑器，就会在控制台打印我们刚开始看的报错信息
+    // Could not open App.vue in the editor. 
+    // To specify an editor, specify the EDITOR env variable or add "editor" field to your Vue project config.
+    onErrorCallback(fileName, null)
+    return
+  }
+
+  if (
+    process.platform === 'linux' &&
+    fileName.startsWith('/mnt/') &&
+    /Microsoft/i.test(os.release())
+  ) {
+    fileName = path.relative('', fileName)
+  }
+
+  if (lineNumber) {
+    const extraArgs = getArgumentsForPosition(editor, fileName, lineNumber, columnNumber)
+    args.push.apply(args, extraArgs)
+  } else {
+    args.push(fileName)
+  }
+
+  if (_childProcess && isTerminalEditor(editor)) {
+    _childProcess.kill('SIGKILL')
+  }
+
+  if (process.platform === 'win32') {
+    _childProcess = childProcess.spawn(
+      'cmd.exe',
+      ['/C', editor].concat(args),
+      { stdio: 'inherit' }
+    )
+  } else {
+    _childProcess = childProcess.spawn(editor, args, { stdio: 'inherit' })
+  }
+  _childProcess.on('exit', function (errorCode) {
+    _childProcess = null
+
+    if (errorCode) {
+      onErrorCallback(fileName, '(code ' + errorCode + ')')
+    }
+  })
+
+  _childProcess.on('error', function (error) {
+    onErrorCallback(fileName, error.message)
+  })
+}
+
 ```
