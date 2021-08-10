@@ -74,4 +74,33 @@ To specify an editor, specify the EDITOR env variable or add "editor" field to y
 先说一下原理：
 通过源码发现，vue-devtools做的事情其实并不复杂，其中利用了nodejs中的child_process执行子进程拿到文件路径，再利用命令（mac和linux使用ps x，Window使用Get-Process）去查找编辑器来打开，当然也可以自己指定编辑器。
 
+流程先走一遍
+1、vue3-project/package.json中有一个调试按钮。
+
+选择 serve vue-cli-service serve
+
+2、搜索 'launch-editor-middleware'这个中间件
+当然这个中间件是在node_modules下的文件中，一般来说搜索不到node_modules下的文件，需要设置下。当然也有个简单做法。就是「排除的文件」右侧旁边有个设置图标「使用“排查设置”与“忽略文件”」，点击下。这时就搜到了vue3-project/node_modules/@vue/cli-service/lib/commands/serve.js中有使用这个中间件。
+
+3、在启动项目的时候会先走到这个断点处
+
+Vue CLI 3中开箱即用具体源码实现。
+// vue3-project/node_modules/@vue/cli-service/lib/commands/serve.js
+// 46行
+const launchEditorMiddleware = require('launch-editor-middleware')
+// 192行
+before (app, server) {
+        // launch editor support.
+        // this works with vue-devtools & @vue/cli-overlay
+        // 请求会走到这里，
+        app.use('/__open-in-editor', launchEditorMiddleware(() => console.log(
+          `To specify an editor, specify the EDITOR env variable or ` +
+          `add "editor" field to your Vue project config.\n`
+        )))
+        // allow other plugins to register middlewares, e.g. PWA
+        api.service.devServerConfigFns.forEach(fn => fn(app, server))
+        // apply in project middlewares
+        projectDevServerOptions.before && projectDevServerOptions.before(app, server)
+  },
+
 ```
