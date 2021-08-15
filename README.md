@@ -230,4 +230,78 @@ wrapErrorCallback 返回给一个新的函数，onErrorCallback就成了一个�
 ```
 ## vue3-工具函数源码解读
 ```
+1、准备
+这一期主要是解读Vue3源码中实用的基础工具函数，大部分都是日常见到或者用到的，可以巩固我们的js基础知识，而且我们也能学到如何读开源项目。先通读几遍川哥写的文章初学者也能看懂的 Vue3 源码中那些实用的基础工具函数，感觉很赞，需要多向川哥学习。下面我会跟着川哥的思路分析每一个基础函数，然后注上自己的理解和扩展。最后做一个总结。
+2、调试
+2.1 读开源项目 贡献指南
+阅读开源项目的 README.md 和贡献指南 contributing.md
+贡献指南写了很多关于参与项目开发的信息。比如怎么跑起来，项目目录结构是怎样的。怎么投入开发，需要哪些知识储备等。
+我觉得这两个文件对想阅读源码的开发者来说十分重要。README.md 描述的是项目的基本信息，它可以快速了解这个项目的全貌。贡献指南 contributing.md 会包含如何参与项目开发，项目打包/运行命令，项目目录结构等等，它能帮助你更好地调试/参与开发源码。在 contributing.md 中我看到了一些比较感兴趣的知识点，比如打包构建格式/配置，包依赖处理，不过这次主要是阅读工具函数，所以后续再抽时间进行有关组件库的学习。
+2.2 打包构建项目代码
+安装完依赖，直接运行yarn build就可以打包 Vue3 的项目代码了，打包的产物如下（以 shared 模块为例）：
+
+这里的 cjs，esm 是 JS 里用来实现【模块化】的不同规则，JS 的模块化标准还有 amd，umd，iife。
+CJS，CommonJS，只能在 NodeJS 上运行，使用 require("module") 读取并加载模块，不支持浏览器。
+ESM，ECMAScript Module，现在使用的模块方案，使用 import export 来管理依赖，浏览器直接通过 <script type="module"> 即可使用该写法。NodeJS 可以通过使用 mjs 后缀或者在 package.json 添加 "type": "module" 来使用。
+2.3 生成 sourcemap 调试 vue-next 源码
+在贡献指南 contributing.md 文件中描述了如何生成 sourcemap 文件：添加【--sourcemap】参数即可。
+
+packages/vue/dist/vue.global.js.map 就是 sourcemap 文件了。
+sourcemap 是一个信息文件，里面储存着位置信息，转换后的代码的每一个位置，所对应的转换前的位置。有了它，出错的时候，出错工具将直接显示原始代码，而不是转换后的代码，方便调试。
+3、工具函数
+3.11 isArray 判断数组
+
+关于prototype、__proto__，可以看一下我的这篇文章详解prototype、__proto__和constructor
+
+3.15 isFunction 判断是不是函数
+下面的isPromise等函数中有用到
+
+
+3.18 isObject 判断是不是对象
+
+3.19 isPromise 判断是不是 Promise
+学到了，判断是不是 Promise是这样的判断的，之前我写的比这个复杂，掌握好promise很重要
+
+3.20 objectToString 对象转字符串
+
+3.21 toTypeString 对象转字符串
+
+3.22 toRawType主要用于精准的判断数据类型，实现方式是：对象转字符串后 截取后几位
+
+判断数据类型的方法和原理请参考我的这篇博客：判断js数据类型的四种方法和原理
+3.23 isPlainObject 判断是不是纯粹的对象
+
+3.24 isIntegerKey 判断是不是数字型的字符串key值
+
+3.25 makeMap && isReservedProp
+传入一个以逗号分隔的字符串，生成一个 map(键值对)，并且返回一个函数检测 key 值在不在这个 map 中。第二个参数是小写选项。
+
+3.26 cacheStringFunction 缓存
+
+这个函数也是和上面 MakeMap 函数类似。只不过接收参数的是函数。 《JavaScript 设计模式与开发实践》书中的第四章 JS单例模式也是类似的实现。=== 关于单例模式，我需要好好总结一下了。
+
+3.27 hasChanged 判断是不是有变化
+
+3.28 invokeArrayFns 执行数组里的函数
+这种应用场景对我来说很少见，不过确实学习到了。
+
+为什么这样写，我们一般都是一个函数执行就行。
+数组中存放函数，函数其实也算是数据。这种写法方便统一执行多个函数。
+3.29 def 定义对象属性
+
+3.30 toNumber 转数字
+
+3.31 getGlobalThis 全局对象
+确实是很特殊的写法，很值得借鉴。
+
+获取全局 this 指向。
+初次执行肯定是 _globalThis 是 undefined。所以会执行后面的赋值语句。
+如果存在 globalThis 就用 globalThis。MDN globalThis
+如果存在self，就用self。在 Web Worker 中不能访问到 window 对象，但是我们却能通过 self 访问到 Worker 环境中的全局对象。
+如果存在window，就用window。
+如果存在global，就用global。Node环境下，使用global。
+如果都不存在，使用空对象。可能是微信小程序环境下。
+下次执行就直接返回 _globalThis，不需要第二次继续判断了。这种写法值得我们学习。
+总结
+通过这次阅读vue3.0的工具函数源码，学习到了很多东西。
 ```
